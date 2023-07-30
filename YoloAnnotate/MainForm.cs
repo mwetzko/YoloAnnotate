@@ -1,6 +1,5 @@
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -72,13 +71,17 @@ namespace YoloAnnotate
 			}
 		}
 
-		void EnsureLoadedProject(string filename)
+		// done by separate task
+		void EnsureLoadedProject(string filename, LoadingForm.LoadingState loadingState)
 		{
 			mCurrentProjectFile = filename;
 
-			lbProjectName.Text = Path.GetFileNameWithoutExtension(filename);
+			RunOnUI(() =>
+			{
+				lbProjectName.Text = Path.GetFileNameWithoutExtension(filename);
 
-			EnsureFormName();
+				EnsureFormName();
+			});
 
 			mCurrentProject = JsonConvert.DeserializeObject<ProjectData>(File.ReadAllText(filename));
 
@@ -91,21 +94,32 @@ namespace YoloAnnotate
 			{
 				foreach (var item in mCurrentProject.Classes)
 				{
+					if (loadingState.Aborted)
+					{
+						return;
+					}
+
 					ProjectState.AddClass(item);
 
-					var cc = new ClassControl(item);
-					cc.Dock = DockStyle.Top;
-					cc.UnsavedChanges += OnClassNameUnsavedChanges;
-					cc.DeleteClass += OnDeleteClass;
-					cc.BeforeRename += OnBeforeRenameClass;
-					cc.Selected += OnClassSelection;
-					pnlClassesList.Controls.Add(cc);
+					RunOnUI(() =>
+					{
+						var cc = new ClassControl(item);
+						cc.Dock = DockStyle.Top;
+						cc.UnsavedChanges += OnClassNameUnsavedChanges;
+						cc.DeleteClass += OnDeleteClass;
+						cc.BeforeRename += OnBeforeRenameClass;
+						cc.Selected += OnClassSelection;
+						pnlClassesList.Controls.Add(cc);
+					});
 				}
 
-				if (pnlClassesList.Controls.Count > 0)
+				RunOnUI(() =>
 				{
-					pnlClassesList.Controls.Cast<ClassControl>().Last().Select();
-				}
+					if (pnlClassesList.Controls.Count > 0)
+					{
+						pnlClassesList.Controls.Cast<ClassControl>().Last().Select();
+					}
+				});
 			}
 
 			if (mCurrentProject.Images != null)
@@ -116,36 +130,50 @@ namespace YoloAnnotate
 
 				foreach (var item in mCurrentProject.Images)
 				{
+					if (loadingState.Aborted)
+					{
+						return;
+					}
+
 					LoadMarks(item.Marks);
 
 					ProjectState.AddMarks(item.Marks);
 
-					var ic = new ImageControl(Path.Combine(path, item.Name), item.Marks);
-					ic.Dock = DockStyle.Top;
-					ic.UnsavedChanges += OnUnsavedChanges;
-					ic.DeleteImage += OnDeleteImage;
-					ic.Selected += OnImageSelection;
-					pnlImagesList.Controls.Add(ic);
+					RunOnUI(() =>
+					{
+						var ic = new ImageControl(Path.Combine(path, item.Name), item.Marks);
+						ic.Dock = DockStyle.Top;
+						ic.UnsavedChanges += OnUnsavedChanges;
+						ic.DeleteImage += OnDeleteImage;
+						ic.Selected += OnImageSelection;
+						pnlImagesList.Controls.Add(ic);
+					});
 				}
 
-				if (pnlImagesList.Controls.Count > 0)
+				RunOnUI(() =>
 				{
-					pnlImagesList.Controls.Cast<ImageControl>().Last().Select();
-				}
+					if (pnlImagesList.Controls.Count > 0)
+					{
+						pnlImagesList.Controls.Cast<ImageControl>().Last().Select();
+					}
+				});
 			}
 
-			btnSave.Visible = true;
-			btnSave.Enabled = false;
-			btnClose.Visible = true;
-			pnlDiffer.Visible = true;
-			pnlImages.Visible = true;
-			pnlImagesList.AutoSize = true;
-			pnlImagesList.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-			pnlClasses.Visible = true;
-			pnlClassesList.AutoSize = true;
-			pnlClassesList.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+			RunOnUI(() =>
+			{
+				btnSave.Visible = true;
+				btnSave.Enabled = false;
+				btnClose.Visible = true;
+				pnlDiffer.Visible = true;
+				pnlImages.Visible = true;
+				pnlImagesList.AutoSize = true;
+				pnlImagesList.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+				pnlClasses.Visible = true;
+				pnlClassesList.AutoSize = true;
+				pnlClassesList.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
-			txtNewClass.Text = string.Empty;
+				txtNewClass.Text = string.Empty;
+			});
 		}
 
 		void DeleteUnusedFile(string filename)
@@ -228,7 +256,17 @@ namespace YoloAnnotate
 
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
-					EnsureLoadedProject(openFileDialog.FileName);
+					using (LoadingForm lform = new LoadingForm())
+					{
+						string proj = openFileDialog.FileName;
+
+						lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
+
+						if (lform.ShowDialog() != DialogResult.OK)
+						{
+							CloseProject();
+						}
+					}
 				}
 			}
 		}
@@ -268,7 +306,17 @@ namespace YoloAnnotate
 						MessageBox.Show($"Cannot create project file: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 					}
 
-					EnsureLoadedProject(saveFileDialog.FileName);
+					using (LoadingForm lform = new LoadingForm())
+					{
+						string proj = saveFileDialog.FileName;
+
+						lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
+
+						if (lform.ShowDialog() != DialogResult.OK)
+						{
+							CloseProject();
+						}
+					}
 				}
 			}
 		}
@@ -469,7 +517,7 @@ namespace YoloAnnotate
 			}
 
 			EnsureClosedProject();
-						
+
 			return true;
 		}
 
@@ -711,6 +759,11 @@ namespace YoloAnnotate
 				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return;
 			}
+		}
+
+		void RunOnUI(Action action)
+		{
+			this.Invoke(action);
 		}
 	}
 }

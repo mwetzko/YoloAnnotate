@@ -16,6 +16,9 @@
     <Compile Update="ImageEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="LoadingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

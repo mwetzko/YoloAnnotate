@@ -193,6 +193,9 @@ namespace YoloAnnotate
 					ControlPaint.DrawBorder(e.Graphics, mSelection, Color.White, ButtonBorderStyle.Solid);
 					ControlPaint.DrawFocusRectangle(e.Graphics, mSelection);
 				}
+
+				e.Graphics.DrawLine(Pens.LightGray, 0, bufferPanel.Height - 1, bufferPanel.Width, bufferPanel.Height - 1);
+				e.Graphics.DrawLine(Pens.LightGray, bufferPanel.Width - 1, 0, bufferPanel.Width - 1, bufferPanel.Height - 1);
 			}
 		}
 
