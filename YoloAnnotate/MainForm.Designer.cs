@@ -55,6 +55,7 @@ namespace YoloAnnotate
 			btnImageFromFile = new Button();
 			lbImages = new Label();
 			imageEditor = new ImageEditor();
+			btnExport = new Button();
 			pnlControls.SuspendLayout();
 			flowProject.SuspendLayout();
 			pnlProjectLabel.SuspendLayout();
@@ -83,6 +84,7 @@ namespace YoloAnnotate
 			flowProject.AutoSize = true;
 			flowProject.Controls.Add(lbProjectName);
 			flowProject.Controls.Add(btnSave);
+			flowProject.Controls.Add(btnExport);
 			flowProject.Controls.Add(btnClose);
 			flowProject.Controls.Add(pnlDiffer);
 			flowProject.Controls.Add(btnProjectOpen);
@@ -117,7 +119,7 @@ namespace YoloAnnotate
 			// 
 			// btnClose
 			// 
-			btnClose.Location = new System.Drawing.Point(128, 6);
+			btnClose.Location = new System.Drawing.Point(213, 6);
 			btnClose.Margin = new Padding(5, 1, 5, 1);
 			btnClose.Name = "btnClose";
 			btnClose.Size = new System.Drawing.Size(75, 23);
@@ -129,7 +131,7 @@ namespace YoloAnnotate
 			// pnlDiffer
 			// 
 			pnlDiffer.BackColor = System.Drawing.Color.Gray;
-			pnlDiffer.Location = new System.Drawing.Point(213, 6);
+			pnlDiffer.Location = new System.Drawing.Point(298, 6);
 			pnlDiffer.Margin = new Padding(5, 1, 5, 1);
 			pnlDiffer.Name = "pnlDiffer";
 			pnlDiffer.Size = new System.Drawing.Size(1, 23);
@@ -137,7 +139,7 @@ namespace YoloAnnotate
 			// 
 			// btnProjectOpen
 			// 
-			btnProjectOpen.Location = new System.Drawing.Point(224, 6);
+			btnProjectOpen.Location = new System.Drawing.Point(309, 6);
 			btnProjectOpen.Margin = new Padding(5, 1, 5, 1);
 			btnProjectOpen.Name = "btnProjectOpen";
 			btnProjectOpen.Size = new System.Drawing.Size(75, 23);
@@ -148,7 +150,7 @@ namespace YoloAnnotate
 			// 
 			// btnProjectCreate
 			// 
-			btnProjectCreate.Location = new System.Drawing.Point(309, 6);
+			btnProjectCreate.Location = new System.Drawing.Point(394, 6);
 			btnProjectCreate.Margin = new Padding(5, 1, 5, 1);
 			btnProjectCreate.Name = "btnProjectCreate";
 			btnProjectCreate.Size = new System.Drawing.Size(75, 23);
@@ -352,6 +354,17 @@ namespace YoloAnnotate
 			imageEditor.DeleteMarks += imageEditor_DeleteMarks;
 			imageEditor.ResizeMarks += imageEditor_ResizeMarks;
 			// 
+			// btnExport
+			// 
+			btnExport.Location = new System.Drawing.Point(128, 6);
+			btnExport.Margin = new Padding(5, 1, 5, 1);
+			btnExport.Name = "btnExport";
+			btnExport.Size = new System.Drawing.Size(75, 23);
+			btnExport.TabIndex = 7;
+			btnExport.Text = "Export";
+			btnExport.UseVisualStyleBackColor = true;
+			btnExport.Click += btnExport_Click;
+			// 
 			// MainForm
 			// 
 			AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
@@ -411,5 +424,6 @@ namespace YoloAnnotate
 		private Button btnImageFromClipboard;
 		private TableLayoutPanel tblAddImage;
 		private ImageEditor imageEditor;
+		private Button btnExport;
 	}
 }

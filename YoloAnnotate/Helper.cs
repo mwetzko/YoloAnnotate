@@ -70,10 +70,8 @@ namespace YoloAnnotate
 			return value >= edge - 4 && value <= edge + 4;
 		}
 
-		public static string EnsureYoloExportPath(string projPath)
+		public static string EnsureYoloExportPath(string path)
 		{
-			string path = Path.Combine(projPath, "Data");
-
 			if (!Directory.Exists(path))
 			{
 				Directory.CreateDirectory(path);
@@ -82,13 +80,13 @@ namespace YoloAnnotate
 			return path;
 		}
 
-		public static void EnsureObjectNames(string dataPath, ClassName[] classes, out string filename)
+		public static void EnsureObjectNames(string dataPath, ClassName[] classes)
 		{
-			filename = Path.Combine(dataPath, "obj.names");
+			string namesFilename = Path.Combine(dataPath, "obj.names");
 
-			File.WriteAllLines(filename, classes.Select(x => x.Name).ToArray());
+			File.WriteAllLines(namesFilename, classes.Select(x => x.Name).ToArray());
 
-			filename = Path.Combine(dataPath, "obj.data");
+			string filename = Path.Combine(dataPath, "obj.data");
 
 			string backup = Path.Combine(dataPath, "backup");
 
@@ -102,13 +100,27 @@ namespace YoloAnnotate
 				{
 					$"classes={classes.Length}",
 					$"train={Path.Combine(dataPath, "train.txt")}",
-					$"valid={Path.Combine(dataPath, "valid.txt")}",
-					$"names={filename}",
+					$"valid={Path.Combine(dataPath, "train.txt")}",
+					$"names={namesFilename}",
 					$"backup={backup}",
 				});
 		}
 
-		public static void EnsureImages(string dataPath, string imagesPath, ClassName[] classes, ImageInfo[] images)
+		public static void EnsureYoloYaml(string dataPath, string imagesPath, ClassName[] classes)
+		{
+			string filename = Path.Combine(dataPath, "config.yaml");
+
+			File.WriteAllLines(filename,
+				new string[]
+				{
+					$"path: {dataPath}",
+					$"train: {imagesPath}",
+					$"val: {imagesPath}",
+					$"names:"
+				}.Concat(classes.Select((x, y) => $"  {y}: {x.Name}")));
+		}
+
+		public static IEnumerable<string> EnsureImages(string imagesPath, ClassName[] classes, ImageInfo[] images)
 		{
 			List<string> imagesUsed = new List<string>();
 
@@ -129,7 +141,7 @@ namespace YoloAnnotate
 				}
 			}
 
-			File.WriteAllLines(Path.Combine(dataPath, "train.txt"), imagesUsed.ToArray());
+			return imagesUsed;
 		}
 	}
 }

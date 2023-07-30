@@ -27,6 +27,7 @@ namespace YoloAnnotate
 			EnsureDefaultProjectNameText();
 
 			btnSave.Visible = false;
+			btnExport.Visible = false;
 			btnClose.Visible = false;
 			pnlDiffer.Visible = false;
 
@@ -163,6 +164,7 @@ namespace YoloAnnotate
 			{
 				btnSave.Visible = true;
 				btnSave.Enabled = false;
+				btnExport.Visible = true;
 				btnClose.Visible = true;
 				pnlDiffer.Visible = true;
 				pnlImages.Visible = true;
@@ -222,6 +224,7 @@ namespace YoloAnnotate
 			pnlClassesList.Controls.Clear();
 
 			btnSave.Visible = false;
+			btnExport.Visible = false;
 			btnClose.Visible = false;
 			pnlDiffer.Visible = false;
 			pnlImages.Visible = false;
@@ -446,8 +449,6 @@ namespace YoloAnnotate
 				MessageBox.Show($"Cannot save project file: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 				return false;
 			}
-
-			SaveYoloFormat();
 
 			mCurrentProject = pd;
 
@@ -710,7 +711,7 @@ namespace YoloAnnotate
 			EnsureUnsavedInfo();
 		}
 
-		void SaveYoloFormat()
+		void SaveYoloDarknetFormat(string exportDir)
 		{
 			string projPath;
 
@@ -728,19 +729,7 @@ namespace YoloAnnotate
 
 			try
 			{
-				dataPath = Helper.EnsureYoloExportPath(projPath);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			string objDataFilename;
-
-			try
-			{
-				Helper.EnsureObjectNames(dataPath, mCurrentProject.Classes, out objDataFilename);
+				dataPath = Helper.EnsureYoloExportPath(exportDir);
 			}
 			catch (Exception ex)
 			{
@@ -752,7 +741,68 @@ namespace YoloAnnotate
 
 			try
 			{
-				Helper.EnsureImages(dataPath, imagesPath, mCurrentProject.Classes, mCurrentProject.Images);
+				var imagesUsed = Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images);
+
+				File.WriteAllLines(Path.Combine(dataPath, "train.txt"), imagesUsed);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			try
+			{
+				Helper.EnsureObjectNames(dataPath, mCurrentProject.Classes);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+		}
+
+		void SaveYoloUltralyticsFormat(string exportDir)
+		{
+			string projPath;
+
+			try
+			{
+				projPath = Path.GetDirectoryName(mCurrentProjectFile);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			string dataPath;
+
+			try
+			{
+				dataPath = Helper.EnsureYoloExportPath(exportDir);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			var imagesPath = Path.Combine(projPath, "Images");
+
+			try
+			{
+				Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
+
+			try
+			{
+				Helper.EnsureYoloYaml(dataPath, imagesPath, mCurrentProject.Classes);
 			}
 			catch (Exception ex)
 			{
@@ -764,6 +814,31 @@ namespace YoloAnnotate
 		void RunOnUI(Action action)
 		{
 			this.Invoke(action);
+		}
+
+		void btnExport_Click(object sender, EventArgs e)
+		{
+			using (var saveFileDialog = new SaveFileDialog())
+			{
+				saveFileDialog.Title = "Export annotation...";
+				saveFileDialog.AddExtension = false;
+				saveFileDialog.CheckPathExists = true;
+				// ----------------------------------\/ keep these ||
+				saveFileDialog.Filter = "Yolo Darknet||Yolo Ultralytics|";
+				saveFileDialog.FileName = "Export";
+
+				if (saveFileDialog.ShowDialog() == DialogResult.OK)
+				{
+					if (saveFileDialog.FilterIndex == 1)
+					{
+						SaveYoloDarknetFormat(saveFileDialog.FileName);
+					}
+					else
+					{
+						SaveYoloUltralyticsFormat(saveFileDialog.FileName);
+					}
+				}
+			}
 		}
 	}
 }
