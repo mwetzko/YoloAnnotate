@@ -12,7 +12,7 @@ namespace YoloAnnotate
 {
 	public partial class MainForm : Form
 	{
-		const string FORM_NAME = "YoloAnnotate";
+		public const string FORM_NAME = "YoloAnnotate";
 
 		string mCurrentProjectFile;
 		ProjectData mCurrentProject;
@@ -22,6 +22,8 @@ namespace YoloAnnotate
 		public MainForm()
 		{
 			InitializeComponent();
+
+			this.Text = FORM_NAME;
 
 			EnsureDefaultProjectNameText();
 

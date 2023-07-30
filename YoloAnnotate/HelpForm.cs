@@ -2,21 +2,23 @@
 
 namespace YoloAnnotate
 {
-    public partial class HelpForm : Form
-    {
-        public HelpForm()
-        {
-            InitializeComponent();
-        }
+	public partial class HelpForm : Form
+	{
+		public HelpForm()
+		{
+			InitializeComponent();
 
-        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
-        {
-            base.OnPreviewKeyDown(e);
+			this.Text = MainForm.FORM_NAME + " Help";
+		}
 
-            if (e.KeyCode == Keys.Escape)
-            {
-                this.Close();
-            }
-        }
-    }
+		protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
+		{
+			base.OnPreviewKeyDown(e);
+
+			if (e.KeyCode == Keys.Escape)
+			{
+				this.Close();
+			}
+		}
+	}
 }

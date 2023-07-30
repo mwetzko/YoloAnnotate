@@ -342,7 +342,7 @@ namespace YoloAnnotate
 			// 
 			// imageEditor
 			// 
-			imageEditor.Dock = System.Windows.Forms.DockStyle.Fill;
+			imageEditor.Dock = DockStyle.Fill;
 			imageEditor.ImageControl = null;
 			imageEditor.Location = new System.Drawing.Point(0, 58);
 			imageEditor.Name = "imageEditor";
@@ -357,14 +357,13 @@ namespace YoloAnnotate
 			AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
 			AutoScaleMode = AutoScaleMode.Font;
 			ClientSize = new System.Drawing.Size(1104, 641);
-			Controls.Add(this.imageEditor);
+			Controls.Add(imageEditor);
 			Controls.Add(pnlImages);
 			Controls.Add(pnlClasses);
 			Controls.Add(pnlControls);
 			DoubleBuffered = true;
 			Name = "MainForm";
 			StartPosition = FormStartPosition.CenterScreen;
-			Text = "YoloAnnotate";
 			pnlControls.ResumeLayout(false);
 			pnlControls.PerformLayout();
 			flowProject.ResumeLayout(false);
