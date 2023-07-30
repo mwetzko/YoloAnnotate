@@ -23,7 +23,7 @@ namespace YoloAnnotate
 		{
 			InitializeComponent();
 
-			this.Text = FORM_NAME;
+			InitFormTitle();
 
 			EnsureDefaultProjectNameText();
 
@@ -35,6 +35,11 @@ namespace YoloAnnotate
 			pnlClasses.Visible = false;
 
 			OnResize(EventArgs.Empty);
+		}
+
+		void InitFormTitle()
+		{
+			this.Text = FORM_NAME;
 		}
 
 		void EnsureFormName()
@@ -193,6 +198,8 @@ namespace YoloAnnotate
 			pnlDiffer.Visible = false;
 			pnlImages.Visible = false;
 			pnlClasses.Visible = false;
+
+			InitFormTitle();
 
 			ProjectState.Clear();
 		}
@@ -462,7 +469,7 @@ namespace YoloAnnotate
 			}
 
 			EnsureClosedProject();
-
+						
 			return true;
 		}
 
