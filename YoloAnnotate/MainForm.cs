@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -17,6 +18,7 @@ namespace YoloAnnotate
 		ProjectData mCurrentProject;
 		bool mUnsavedChanges;
 		ClassName mSelectedClassName;
+		int? mLastExportFilter;
 
 		public MainForm()
 		{
@@ -719,15 +721,38 @@ namespace YoloAnnotate
 		}
 
 		// done by separate task
-		void SaveYoloDarknetFormat(string exportDir, LoadingForm.LoadingState loadingState)
+		void SaveYoloDarknetFormat(string exportDir, bool useAbsolutePaths, LoadingForm.LoadingState loadingState)
 		{
 			string projPath = Path.GetDirectoryName(mCurrentProjectFile);
-			string dataPath = Helper.EnsureYoloExportPath(exportDir);
+			exportDir = Helper.EnsureYoloExportPath(exportDir);
 			var imagesPath = Path.Combine(projPath, "Images");
-			var imagesUsed = Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
+			var exportImagesPath = Helper.EnsureYoloExportPath(Path.Combine(exportDir, "images"));
+			var imagesUsed = Helper.EnsureImages(imagesPath, exportImagesPath, exportImagesPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
 
-			File.WriteAllLines(Path.Combine(dataPath, "train.txt"), imagesUsed);
-			Helper.EnsureObjectNames(dataPath, mCurrentProject.Classes);
+			if (useAbsolutePaths)
+			{
+				File.WriteAllLines(Path.Combine(exportDir, "train.txt"), imagesUsed);
+			}
+			else
+			{
+				List<string> relativeImagePaths = new List<string>();
+
+				foreach (var imagePath in imagesUsed)
+				{
+					if (imagePath.StartsWith(exportDir, StringComparison.InvariantCultureIgnoreCase))
+					{
+						relativeImagePaths.Add(imagePath.Substring(exportDir.Length).TrimStart('\\'));
+					}
+					else
+					{
+						relativeImagePaths.Add(imagePath);
+					}
+				}
+
+				File.WriteAllLines(Path.Combine(exportDir, "train.txt"), relativeImagePaths);
+			}
+
+			Helper.EnsureObjectNames(exportDir, useAbsolutePaths, mCurrentProject.Classes);
 		}
 
 		// done by separate task
@@ -736,9 +761,11 @@ namespace YoloAnnotate
 			string projPath = Path.GetDirectoryName(mCurrentProjectFile);
 			string dataPath = Helper.EnsureYoloExportPath(exportDir);
 			var imagesPath = Path.Combine(projPath, "Images");
+			var exportImagesPath = Helper.EnsureYoloExportPath(Path.Combine(exportDir, "images", "train"));
+			var exportLabelsPath = Helper.EnsureYoloExportPath(Path.Combine(exportDir, "labels", "train"));
 
-			Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
-			Helper.EnsureYoloYaml(dataPath, imagesPath, mCurrentProject.Classes);
+			Helper.EnsureImages(imagesPath, exportImagesPath, exportLabelsPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
+			Helper.EnsureYoloYaml(dataPath, mCurrentProject.Classes);
 		}
 
 		void RunOnUI(Action action)
@@ -748,44 +775,56 @@ namespace YoloAnnotate
 
 		void btnExport_Click(object sender, EventArgs e)
 		{
-			using (var saveFileDialog = new SaveFileDialog())
+			using (FolderBrowserDialog explorer = new FolderBrowserDialog())
 			{
-				saveFileDialog.Title = "Export annotation...";
-				saveFileDialog.AddExtension = false;
-				saveFileDialog.CheckFileExists = false;
-				saveFileDialog.CheckPathExists = false;
-				// ----------------------------------\/ keep these ||
-				saveFileDialog.Filter = "Yolo Darknet||Yolo Ultralytics|";
-				saveFileDialog.FileName = "Export";
+				explorer.UseDescriptionForTitle = true;
+				explorer.Description = "Export annotation...";
 
-				if (saveFileDialog.ShowDialog() == DialogResult.OK)
+				if (explorer.ShowDialog() == DialogResult.OK)
 				{
-					int index = saveFileDialog.FilterIndex;
-
 					try
 					{
+						string exportDir = Helper.EnsureYoloExportPath(explorer.SelectedPath);
+
+						bool useAbsolutePaths;
+
+						using (ChooseExportForm choose = new ChooseExportForm())
+						{
+							if (mLastExportFilter.HasValue)
+							{
+								choose.SelectedIndex = mLastExportFilter.Value;
+							}
+
+							if (choose.ShowDialog() != DialogResult.OK)
+							{
+								MessageBox.Show($"Export has been aborted by user!", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+								return;
+							}
+
+							mLastExportFilter = choose.SelectedIndex;
+							useAbsolutePaths = choose.UseAbsolutePaths;
+						}
+
 						using (LoadingForm lform = new LoadingForm())
 						{
 							lform.Title = "Exporting...";
 
-							string proj = saveFileDialog.FileName;
-
 							lform.ProcessAction = (abortState) =>
 							{
-								if (index == 1)
+								if (mLastExportFilter == 0)
 								{
-									SaveYoloDarknetFormat(saveFileDialog.FileName, abortState);
+									SaveYoloDarknetFormat(exportDir, useAbsolutePaths, abortState);
 								}
 								else
 								{
-									SaveYoloUltralyticsFormat(saveFileDialog.FileName, abortState);
+									SaveYoloUltralyticsFormat(exportDir, abortState);
 								}
 							};
-
 
 							if (lform.ShowDialog() != DialogResult.OK)
 							{
 								MessageBox.Show($"Export has been aborted by user!", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+								return;
 							}
 						}
 					}

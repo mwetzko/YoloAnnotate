@@ -80,48 +80,64 @@ namespace YoloAnnotate
 			return path;
 		}
 
-		public static void EnsureObjectNames(string dataPath, ClassName[] classes)
+		public static void EnsureObjectNames(string exportDir, bool useAbsolutePaths, ClassName[] classes)
 		{
-			string namesFilename = Path.Combine(dataPath, "obj.names");
+			string namesFilename = Path.Combine(exportDir, "obj.names");
 
 			File.WriteAllLines(namesFilename, classes.Select(x => x.Name).ToArray());
 
-			string filename = Path.Combine(dataPath, "obj.data");
+			string filename = Path.Combine(exportDir, "obj.data");
 
-			string backup = Path.Combine(dataPath, "backup");
+			string backup = EnsureYoloExportPath(Path.Combine(exportDir, "backup"));
 
-			if (!Directory.Exists(backup))
+			string trainFilename = Path.Combine(exportDir, "train.txt");
+
+			if (useAbsolutePaths)
 			{
-				Directory.CreateDirectory(backup);
-			}
-
-			File.WriteAllLines(filename,
-				new string[]
-				{
+				File.WriteAllLines(filename,
+					new string[]
+					{
 					$"classes={classes.Length}",
-					$"train={Path.Combine(dataPath, "train.txt")}",
-					$"valid={Path.Combine(dataPath, "train.txt")}",
+					$"train={trainFilename}",
+					$"valid={trainFilename}",
 					$"names={namesFilename}",
 					$"backup={backup}",
-				});
+					});
+			}
+			else
+			{
+				trainFilename = Path.GetFileName(trainFilename);
+
+				File.WriteAllLines(filename,
+					new string[]
+					{
+					$"classes={classes.Length}",
+					$"train={trainFilename}",
+					$"valid={trainFilename}",
+					$"names={Path.GetFileName(namesFilename)}",
+					$"backup={Path.GetFileName(backup)}",
+					});
+			}
 		}
 
-		public static void EnsureYoloYaml(string dataPath, string imagesPath, ClassName[] classes)
+		public static void EnsureYoloYaml(string exportDir, ClassName[] classes)
 		{
-			string filename = Path.Combine(dataPath, "config.yaml");
+			string filename = Path.Combine(exportDir, "config.yaml");
 
 			File.WriteAllLines(filename,
 				new string[]
 				{
-					$"path: {dataPath}",
-					$"train: {imagesPath}",
-					$"val: {imagesPath}",
+					$"path: {exportDir}",
+					$"train: images/train",
+					$"val: images/train",
 					$"names:"
 				}.Concat(classes.Select((x, y) => $"  {y}: {x.Name}")));
 		}
 
-		public static IEnumerable<string> EnsureImages(string imagesPath, ClassName[] classes, ImageInfo[] images, LoadingForm.LoadingState loadingState)
+		public static IEnumerable<string> EnsureImages(string imagesPath, string exportImagesPath, string exportLabelsPath, ClassName[] classes, ImageInfo[] images, LoadingForm.LoadingState loadingState)
 		{
+			bool imagePathIsSame = string.Equals(imagesPath, exportImagesPath, StringComparison.InvariantCultureIgnoreCase);
+
 			List<string> imagesUsed = new List<string>();
 
 			foreach (var item in images)
@@ -133,7 +149,20 @@ namespace YoloAnnotate
 
 				if (item.Marks != null)
 				{
-					imagesUsed.Add(Path.Combine(imagesPath, item.Name));
+					string imgPath = Path.Combine(imagesPath, item.Name);
+
+					if (imagePathIsSame)
+					{
+						imagesUsed.Add(imgPath);
+					}
+					else
+					{
+						string newImagePath = Path.Combine(exportImagesPath, item.Name);
+
+						File.CreateSymbolicLink(newImagePath, imgPath);
+
+						imagesUsed.Add(newImagePath);
+					}
 
 					List<string> markInfo = new List<string>();
 
@@ -142,7 +171,7 @@ namespace YoloAnnotate
 						markInfo.Add($"{Array.IndexOf(classes, mark.ClassName)} {mark.CenterX:0.000000} {mark.CenterY:0.000000} {mark.Width:0.000000} {mark.Height:0.000000}");
 					}
 
-					File.WriteAllLines(Path.Combine(imagesPath, Path.GetFileNameWithoutExtension(item.Name) + ".txt"), markInfo.ToArray());
+					File.WriteAllLines(Path.Combine(exportLabelsPath, Path.GetFileNameWithoutExtension(item.Name) + ".txt"), markInfo.ToArray());
 				}
 			}
 
