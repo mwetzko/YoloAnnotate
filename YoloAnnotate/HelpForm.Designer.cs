@@ -116,9 +116,9 @@
 			lbRmbDrag.Location = new System.Drawing.Point(6, 84);
 			lbRmbDrag.Margin = new System.Windows.Forms.Padding(5);
 			lbRmbDrag.Name = "lbRmbDrag";
-			lbRmbDrag.Size = new System.Drawing.Size(147, 15);
+			lbRmbDrag.Size = new System.Drawing.Size(176, 45);
 			lbRmbDrag.TabIndex = 6;
-			lbRmbDrag.Text = "Right Mouse Down + Drag";
+			lbRmbDrag.Text = "Middle Mouse Down + Drag\r\n- or -\r\nAlt + Right Mouse Down + Drag";
 			// 
 			// lbRmbDragText
 			// 
@@ -133,7 +133,7 @@
 			// lbMwScroll
 			// 
 			lbMwScroll.AutoSize = true;
-			lbMwScroll.Location = new System.Drawing.Point(6, 110);
+			lbMwScroll.Location = new System.Drawing.Point(6, 140);
 			lbMwScroll.Margin = new System.Windows.Forms.Padding(5);
 			lbMwScroll.Name = "lbMwScroll";
 			lbMwScroll.Size = new System.Drawing.Size(79, 15);
@@ -163,7 +163,7 @@
 			// lbMmDel
 			// 
 			lbMmDel.AutoSize = true;
-			lbMmDel.Location = new System.Drawing.Point(6, 136);
+			lbMmDel.Location = new System.Drawing.Point(6, 166);
 			lbMmDel.Margin = new System.Windows.Forms.Padding(5);
 			lbMmDel.Name = "lbMmDel";
 			lbMmDel.Size = new System.Drawing.Size(132, 15);
@@ -173,7 +173,7 @@
 			// lbMwText
 			// 
 			lbMwText.AutoSize = true;
-			lbMwText.Location = new System.Drawing.Point(226, 110);
+			lbMwText.Location = new System.Drawing.Point(226, 140);
 			lbMwText.Margin = new System.Windows.Forms.Padding(5);
 			lbMwText.Name = "lbMwText";
 			lbMwText.Size = new System.Drawing.Size(111, 15);
@@ -183,7 +183,7 @@
 			// lbMmDelText
 			// 
 			lbMmDelText.AutoSize = true;
-			lbMmDelText.Location = new System.Drawing.Point(226, 136);
+			lbMmDelText.Location = new System.Drawing.Point(226, 166);
 			lbMmDelText.Margin = new System.Windows.Forms.Padding(5);
 			lbMmDelText.Name = "lbMmDelText";
 			lbMmDelText.Size = new System.Drawing.Size(70, 15);
@@ -193,7 +193,7 @@
 			// lbMmCtrl
 			// 
 			lbMmCtrl.AutoSize = true;
-			lbMmCtrl.Location = new System.Drawing.Point(6, 162);
+			lbMmCtrl.Location = new System.Drawing.Point(6, 192);
 			lbMmCtrl.Margin = new System.Windows.Forms.Padding(5);
 			lbMmCtrl.Name = "lbMmCtrl";
 			lbMmCtrl.Size = new System.Drawing.Size(209, 15);
@@ -203,7 +203,7 @@
 			// lbMmCtrlText
 			// 
 			lbMmCtrlText.AutoSize = true;
-			lbMmCtrlText.Location = new System.Drawing.Point(226, 162);
+			lbMmCtrlText.Location = new System.Drawing.Point(226, 192);
 			lbMmCtrlText.Margin = new System.Windows.Forms.Padding(5);
 			lbMmCtrlText.Name = "lbMmCtrlText";
 			lbMmCtrlText.Size = new System.Drawing.Size(105, 15);
