@@ -120,12 +120,17 @@ namespace YoloAnnotate
 				}.Concat(classes.Select((x, y) => $"  {y}: {x.Name}")));
 		}
 
-		public static IEnumerable<string> EnsureImages(string imagesPath, ClassName[] classes, ImageInfo[] images)
+		public static IEnumerable<string> EnsureImages(string imagesPath, ClassName[] classes, ImageInfo[] images, LoadingForm.LoadingState loadingState)
 		{
 			List<string> imagesUsed = new List<string>();
 
 			foreach (var item in images)
 			{
+				if (loadingState.Aborted)
+				{
+					return default;
+				}
+
 				if (item.Marks != null)
 				{
 					imagesUsed.Add(Path.Combine(imagesPath, item.Name));

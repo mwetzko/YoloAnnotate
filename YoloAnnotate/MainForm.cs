@@ -259,16 +259,23 @@ namespace YoloAnnotate
 
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{
-					using (LoadingForm lform = new LoadingForm())
+					try
 					{
-						string proj = openFileDialog.FileName;
-
-						lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
-
-						if (lform.ShowDialog() != DialogResult.OK)
+						using (LoadingForm lform = new LoadingForm())
 						{
-							CloseProject();
+							string proj = openFileDialog.FileName;
+
+							lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
+
+							if (lform.ShowDialog() != DialogResult.OK)
+							{
+								CloseProject();
+							}
 						}
+					}
+					catch (Exception ex)
+					{
+						MessageBox.Show($"Cannot open project file: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 					}
 				}
 			}
@@ -303,22 +310,22 @@ namespace YoloAnnotate
 					try
 					{
 						File.Create(saveFileDialog.FileName).Dispose();
+
+						using (LoadingForm lform = new LoadingForm())
+						{
+							string proj = saveFileDialog.FileName;
+
+							lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
+
+							if (lform.ShowDialog() != DialogResult.OK)
+							{
+								CloseProject();
+							}
+						}
 					}
 					catch (Exception ex)
 					{
 						MessageBox.Show($"Cannot create project file: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-					}
-
-					using (LoadingForm lform = new LoadingForm())
-					{
-						string proj = saveFileDialog.FileName;
-
-						lform.ProcessAction = (abortState) => EnsureLoadedProject(proj, abortState);
-
-						if (lform.ShowDialog() != DialogResult.OK)
-						{
-							CloseProject();
-						}
 					}
 				}
 			}
@@ -711,104 +718,27 @@ namespace YoloAnnotate
 			EnsureUnsavedInfo();
 		}
 
-		void SaveYoloDarknetFormat(string exportDir)
+		// done by separate task
+		void SaveYoloDarknetFormat(string exportDir, LoadingForm.LoadingState loadingState)
 		{
-			string projPath;
-
-			try
-			{
-				projPath = Path.GetDirectoryName(mCurrentProjectFile);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			string dataPath;
-
-			try
-			{
-				dataPath = Helper.EnsureYoloExportPath(exportDir);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
+			string projPath = Path.GetDirectoryName(mCurrentProjectFile);
+			string dataPath = Helper.EnsureYoloExportPath(exportDir);
 			var imagesPath = Path.Combine(projPath, "Images");
+			var imagesUsed = Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
 
-			try
-			{
-				var imagesUsed = Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images);
-
-				File.WriteAllLines(Path.Combine(dataPath, "train.txt"), imagesUsed);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			try
-			{
-				Helper.EnsureObjectNames(dataPath, mCurrentProject.Classes);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
+			File.WriteAllLines(Path.Combine(dataPath, "train.txt"), imagesUsed);
+			Helper.EnsureObjectNames(dataPath, mCurrentProject.Classes);
 		}
 
-		void SaveYoloUltralyticsFormat(string exportDir)
+		// done by separate task
+		void SaveYoloUltralyticsFormat(string exportDir, LoadingForm.LoadingState loadingState)
 		{
-			string projPath;
-
-			try
-			{
-				projPath = Path.GetDirectoryName(mCurrentProjectFile);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			string dataPath;
-
-			try
-			{
-				dataPath = Helper.EnsureYoloExportPath(exportDir);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
+			string projPath = Path.GetDirectoryName(mCurrentProjectFile);
+			string dataPath = Helper.EnsureYoloExportPath(exportDir);
 			var imagesPath = Path.Combine(projPath, "Images");
 
-			try
-			{
-				Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
-
-			try
-			{
-				Helper.EnsureYoloYaml(dataPath, imagesPath, mCurrentProject.Classes);
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show(ex.Message, FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
-				return;
-			}
+			Helper.EnsureImages(imagesPath, mCurrentProject.Classes, mCurrentProject.Images, loadingState);
+			Helper.EnsureYoloYaml(dataPath, imagesPath, mCurrentProject.Classes);
 		}
 
 		void RunOnUI(Action action)
@@ -822,20 +752,46 @@ namespace YoloAnnotate
 			{
 				saveFileDialog.Title = "Export annotation...";
 				saveFileDialog.AddExtension = false;
-				saveFileDialog.CheckPathExists = true;
+				saveFileDialog.CheckFileExists = false;
+				saveFileDialog.CheckPathExists = false;
 				// ----------------------------------\/ keep these ||
 				saveFileDialog.Filter = "Yolo Darknet||Yolo Ultralytics|";
 				saveFileDialog.FileName = "Export";
 
 				if (saveFileDialog.ShowDialog() == DialogResult.OK)
 				{
-					if (saveFileDialog.FilterIndex == 1)
+					int index = saveFileDialog.FilterIndex;
+
+					try
 					{
-						SaveYoloDarknetFormat(saveFileDialog.FileName);
+						using (LoadingForm lform = new LoadingForm())
+						{
+							lform.Title = "Exporting...";
+
+							string proj = saveFileDialog.FileName;
+
+							lform.ProcessAction = (abortState) =>
+							{
+								if (index == 1)
+								{
+									SaveYoloDarknetFormat(saveFileDialog.FileName, abortState);
+								}
+								else
+								{
+									SaveYoloUltralyticsFormat(saveFileDialog.FileName, abortState);
+								}
+							};
+
+
+							if (lform.ShowDialog() != DialogResult.OK)
+							{
+								MessageBox.Show($"Export has been aborted by user!", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+							}
+						}
 					}
-					else
+					catch (Exception ex)
 					{
-						SaveYoloUltralyticsFormat(saveFileDialog.FileName);
+						MessageBox.Show($"Failed to export: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 					}
 				}
 			}

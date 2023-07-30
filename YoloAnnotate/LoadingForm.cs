@@ -23,6 +23,8 @@ namespace YoloAnnotate
 			mLoadingState = new LoadingState();
 		}
 
+		public string Title { get => lbTitle.Text; set => lbTitle.Text = value; }
+
 		public Action<LoadingState> ProcessAction { get; set; }
 
 		protected override void OnShown(EventArgs e)
