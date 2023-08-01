@@ -25,5 +25,8 @@
     <Compile Update="MarkControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="SplitButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
 </Project>
