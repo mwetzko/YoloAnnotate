@@ -963,7 +963,26 @@ namespace YoloAnnotate
 
 			mSelectedProcessWindow = ctrl.Tag as ProcessWindow;
 
+			if (btnImageFromWindow.Icon != null)
+			{
+				btnImageFromWindow.Icon.Dispose();
+				btnImageFromWindow.Icon = null;
+			}
+
+			btnImageFromWindow.Icon = ctrl.Image;
+
+			ctrl.Image = null;
+
 			btnImageFromWindow.Text = mSelectedProcessWindow.Name;
+
+			if (btnImageFromWindow.Icon == null)
+			{
+				btnImageFromWindow.Padding = new Padding(0, btnImageFromWindow.Padding.Top, btnImageFromWindow.Padding.Right, btnImageFromWindow.Padding.Bottom);
+			}
+			else
+			{
+				btnImageFromWindow.Padding = new Padding(btnImageFromWindow.Height, btnImageFromWindow.Padding.Top, btnImageFromWindow.Padding.Right, btnImageFromWindow.Padding.Bottom);
+			}
 
 			CaptureWindowImage();
 		}

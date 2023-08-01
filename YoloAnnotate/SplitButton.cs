@@ -11,6 +11,8 @@ namespace YoloAnnotate
 
 		public event EventHandler ArrowClick;
 
+		public Image Icon { get; set; }
+
 		protected override void OnMouseDown(MouseEventArgs e)
 		{
 			base.OnMouseDown(e);
@@ -44,6 +46,13 @@ namespace YoloAnnotate
 			this.Invalidate();
 		}
 
+		protected override void OnPaddingChanged(EventArgs e)
+		{
+			base.OnPaddingChanged(e);
+
+			this.Invalidate();
+		}
+
 		protected override void OnPaint(PaintEventArgs e)
 		{
 			base.OnPaint(e);
@@ -67,6 +76,31 @@ namespace YoloAnnotate
 			Point mid = new Point(start - 1 + (int)(this.Padding.Right * 0.5f), (int)(this.Height * 0.5f));
 
 			e.Graphics.FillPolygon(Brushes.Black, new PointF[] { Point.Add(mid, new Size(-3, -2)), Point.Add(mid, new Size(3, -2)), Point.Add(mid, new Size(0, 3)) }, FillMode.Alternate);
+
+			if (this.Icon != null)
+			{
+				var w = this.Padding.Left - 6;
+				var h = this.Height - 6;
+
+				if (w > 0 && h > 0)
+				{
+					var r = this.Icon.Width / (float)this.Icon.Height;
+
+					if (this.Icon.Width < w)
+					{
+						w = this.Icon.Width;
+						h = (int)(w / r);
+					}
+
+					if (this.Icon.Height < h)
+					{
+						h = this.Icon.Width;
+						w = (int)(h * r);
+					}
+
+					e.Graphics.DrawImage(this.Icon, (this.Padding.Left - w) / 2, (this.Height - h) / 2, w, h);
+				}
+			}
 		}
 	}
 }
