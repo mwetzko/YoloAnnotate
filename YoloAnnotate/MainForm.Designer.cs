@@ -30,10 +30,12 @@ namespace YoloAnnotate
 		/// </summary>
 		private void InitializeComponent()
 		{
+			components = new System.ComponentModel.Container();
 			pnlControls = new Panel();
 			flowProject = new FlowLayoutPanel();
 			lbProjectName = new Label();
 			btnSave = new Button();
+			btnExport = new Button();
 			btnClose = new Button();
 			pnlDiffer = new Panel();
 			btnProjectOpen = new Button();
@@ -53,9 +55,10 @@ namespace YoloAnnotate
 			tblAddImage = new TableLayoutPanel();
 			btnImageFromClipboard = new Button();
 			btnImageFromFile = new Button();
+			btnImageFromWindow = new SplitButton();
 			lbImages = new Label();
 			imageEditor = new ImageEditor();
-			btnExport = new Button();
+			contextPickProcessWindow = new ContextMenuStrip(components);
 			pnlControls.SuspendLayout();
 			flowProject.SuspendLayout();
 			pnlProjectLabel.SuspendLayout();
@@ -116,6 +119,17 @@ namespace YoloAnnotate
 			btnSave.Text = "Save";
 			btnSave.UseVisualStyleBackColor = true;
 			btnSave.Click += btnSave_Click;
+			// 
+			// btnExport
+			// 
+			btnExport.Location = new System.Drawing.Point(128, 6);
+			btnExport.Margin = new Padding(5, 1, 5, 1);
+			btnExport.Name = "btnExport";
+			btnExport.Size = new System.Drawing.Size(75, 23);
+			btnExport.TabIndex = 7;
+			btnExport.Text = "Export";
+			btnExport.UseVisualStyleBackColor = true;
+			btnExport.Click += btnExport_Click;
 			// 
 			// btnClose
 			// 
@@ -264,9 +278,9 @@ namespace YoloAnnotate
 			pnlImagesScroll.AutoScroll = true;
 			pnlImagesScroll.Controls.Add(pnlImagesList);
 			pnlImagesScroll.Dock = DockStyle.Fill;
-			pnlImagesScroll.Location = new System.Drawing.Point(1, 58);
+			pnlImagesScroll.Location = new System.Drawing.Point(1, 84);
 			pnlImagesScroll.Name = "pnlImagesScroll";
-			pnlImagesScroll.Size = new System.Drawing.Size(198, 525);
+			pnlImagesScroll.Size = new System.Drawing.Size(198, 499);
 			pnlImagesScroll.TabIndex = 6;
 			// 
 			// pnlImagesList
@@ -288,7 +302,7 @@ namespace YoloAnnotate
 			pnlImagesAdd.Location = new System.Drawing.Point(1, 28);
 			pnlImagesAdd.Name = "pnlImagesAdd";
 			pnlImagesAdd.Padding = new Padding(0, 0, 0, 1);
-			pnlImagesAdd.Size = new System.Drawing.Size(198, 30);
+			pnlImagesAdd.Size = new System.Drawing.Size(198, 56);
 			pnlImagesAdd.TabIndex = 5;
 			pnlImagesAdd.Paint += PaintBottomLine;
 			// 
@@ -301,13 +315,15 @@ namespace YoloAnnotate
 			tblAddImage.ColumnStyles.Add(new ColumnStyle());
 			tblAddImage.Controls.Add(btnImageFromClipboard, 1, 0);
 			tblAddImage.Controls.Add(btnImageFromFile, 0, 0);
+			tblAddImage.Controls.Add(btnImageFromWindow, 0, 1);
 			tblAddImage.Dock = DockStyle.Top;
 			tblAddImage.Location = new System.Drawing.Point(0, 0);
 			tblAddImage.Margin = new Padding(0);
 			tblAddImage.Name = "tblAddImage";
-			tblAddImage.RowCount = 1;
-			tblAddImage.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-			tblAddImage.Size = new System.Drawing.Size(198, 29);
+			tblAddImage.RowCount = 2;
+			tblAddImage.RowStyles.Add(new RowStyle());
+			tblAddImage.RowStyles.Add(new RowStyle());
+			tblAddImage.Size = new System.Drawing.Size(198, 55);
 			tblAddImage.TabIndex = 0;
 			// 
 			// btnImageFromClipboard
@@ -330,6 +346,20 @@ namespace YoloAnnotate
 			btnImageFromFile.Text = "From File";
 			btnImageFromFile.UseVisualStyleBackColor = true;
 			btnImageFromFile.Click += btnImageFromFile_Click;
+			// 
+			// btnImageFromWindow
+			// 
+			tblAddImage.SetColumnSpan(btnImageFromWindow, 2);
+			btnImageFromWindow.Location = new System.Drawing.Point(3, 29);
+			btnImageFromWindow.Margin = new Padding(3, 0, 3, 3);
+			btnImageFromWindow.Name = "btnImageFromWindow";
+			btnImageFromWindow.Padding = new Padding(0, 0, 17, 0);
+			btnImageFromWindow.Size = new System.Drawing.Size(192, 23);
+			btnImageFromWindow.TabIndex = 2;
+			btnImageFromWindow.Text = "Choose Process Window";
+			btnImageFromWindow.UseVisualStyleBackColor = true;
+			btnImageFromWindow.ArrowClick += btnImageFromWindow_ArrowClick;
+			btnImageFromWindow.Click += btnImageFromWindow_Click;
 			// 
 			// lbImages
 			// 
@@ -354,16 +384,11 @@ namespace YoloAnnotate
 			imageEditor.DeleteMarks += imageEditor_DeleteMarks;
 			imageEditor.ResizeMarks += imageEditor_ResizeMarks;
 			// 
-			// btnExport
+			// contextPickProcessWindow
 			// 
-			btnExport.Location = new System.Drawing.Point(128, 6);
-			btnExport.Margin = new Padding(5, 1, 5, 1);
-			btnExport.Name = "btnExport";
-			btnExport.Size = new System.Drawing.Size(75, 23);
-			btnExport.TabIndex = 7;
-			btnExport.Text = "Export";
-			btnExport.UseVisualStyleBackColor = true;
-			btnExport.Click += btnExport_Click;
+			contextPickProcessWindow.Name = "contextPickProcessWindow";
+			contextPickProcessWindow.Size = new System.Drawing.Size(181, 26);
+			contextPickProcessWindow.Closed += contextPickProcessWindow_Closed;
 			// 
 			// MainForm
 			// 
@@ -425,5 +450,7 @@ namespace YoloAnnotate
 		private TableLayoutPanel tblAddImage;
 		private ImageEditor imageEditor;
 		private Button btnExport;
+		private SplitButton btnImageFromWindow;
+		private ContextMenuStrip contextPickProcessWindow;
 	}
 }

@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 
@@ -19,6 +20,7 @@ namespace YoloAnnotate
 		bool mUnsavedChanges;
 		ClassName mSelectedClassName;
 		int? mLastExportFilter;
+		ProcessWindow mSelectedProcessWindow;
 
 		public MainForm()
 		{
@@ -581,7 +583,10 @@ namespace YoloAnnotate
 		{
 			if (Clipboard.ContainsImage())
 			{
-				AddImage(Clipboard.GetImage());
+				using (Image img = Clipboard.GetImage())
+				{
+					AddImage(img);
+				}
 			}
 		}
 
@@ -833,6 +838,190 @@ namespace YoloAnnotate
 						MessageBox.Show($"Failed to export: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 					}
 				}
+			}
+		}
+
+		void btnImageFromWindow_Click(object sender, EventArgs e)
+		{
+			if (mSelectedProcessWindow == null)
+			{
+				btnImageFromWindow_ArrowClick(sender, e);
+				return;
+			}
+
+			CaptureWindowImage();
+		}
+
+		void btnImageFromWindow_ArrowClick(object sender, EventArgs e)
+		{
+			Cursor = Cursors.WaitCursor;
+
+			ClearContextPickProcessWindow();
+
+			contextPickProcessWindow.Items.Add("Loading...").Enabled = false;
+			contextPickProcessWindow.Show(btnImageFromWindow, 1, btnImageFromWindow.Height - 1);
+
+			Task.Run(LoadProcessWindows).ContinueWith(AfterLoadProcessWindows);
+		}
+
+		void contextPickProcessWindow_Closed(object sender, ToolStripDropDownClosedEventArgs e)
+		{
+			Cursor = Cursors.Default;
+		}
+
+		ProcessWindow[] LoadProcessWindows()
+		{
+			List<IntPtr> windows = new List<IntPtr>();
+			Win32.EnumWindows(windows.Add);
+			return windows.Where(Win32.IsMainWindow).Select(x => new ProcessWindow() { Name = Win32.GetWindowText(x), Window = x }).ToArray();
+		}
+
+		void ClearContextPickProcessWindow()
+		{
+			foreach (ToolStripItem item in contextPickProcessWindow.Items)
+			{
+				if (item.Image != null)
+				{
+					item.Image.Dispose();
+					item.Image = null;
+				}
+			}
+
+			contextPickProcessWindow.Items.Clear();
+		}
+
+		void AfterLoadProcessWindows(Task<ProcessWindow[]> task)
+		{
+			if (this.InvokeRequired)
+			{
+				this.BeginInvoke(new Action<Task<ProcessWindow[]>>(AfterLoadProcessWindows), task);
+			}
+			else
+			{
+				if (!contextPickProcessWindow.Visible)
+				{
+					return;
+				}
+
+				Cursor = Cursors.Default;
+
+				ClearContextPickProcessWindow();
+
+				ProcessWindow[] windows;
+
+				try
+				{
+					windows = task.GetAwaiter().GetResult();
+				}
+				catch (Exception ex)
+				{
+					MessageBox.Show($"Failed loading process windows: {ex.Message}", FORM_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+					return;
+				}
+
+				if (windows == null || windows.Length == 0)
+				{
+					contextPickProcessWindow.Items.Add("Nothing to capture").Enabled = false;
+					return;
+				}
+
+				foreach (var item in windows)
+				{
+					if (string.IsNullOrEmpty(item.Name))
+					{
+						continue;
+					}
+
+					if (Win32.GetWindowRect(item.Window, out Win32.RECT wndRect) && Win32.GetClientRect(item.Window, out Win32.RECT clientRect))
+					{
+						var wndRectangle = Rectangle.FromLTRB(wndRect.left, wndRect.top, wndRect.right, wndRect.bottom);
+						var clientRectangle = Rectangle.FromLTRB(clientRect.left, clientRect.top, clientRect.right, clientRect.bottom);
+
+						if (wndRectangle.Width > 0 && wndRectangle.Height > 0 && clientRectangle.Width > 0 && clientRectangle.Height > 0)
+						{
+							var ctxItem = contextPickProcessWindow.Items.Add($"{item.Name} ({wndRectangle.Width}x{wndRectangle.Height}, {clientRectangle.Width}x{clientRectangle.Height})");
+
+							var icon = Win32.GetAppIcon(item.Window);
+
+							if (icon != null)
+							{
+								ctxItem.Image = icon.ToBitmap();
+								icon.Dispose();
+							}
+
+							ctxItem.Tag = item;
+							ctxItem.Click += CtxItem_Click;
+						}
+					}
+				}
+			}
+		}
+
+		void CtxItem_Click(object sender, EventArgs e)
+		{
+			var ctrl = sender as ToolStripItem;
+
+			mSelectedProcessWindow = ctrl.Tag as ProcessWindow;
+
+			btnImageFromWindow.Text = mSelectedProcessWindow.Name;
+
+			CaptureWindowImage();
+		}
+
+		void CaptureWindowImage()
+		{
+			if (mSelectedProcessWindow == null)
+			{
+				return;
+			}
+
+			IntPtr hwnd = mSelectedProcessWindow.Window;
+
+			Win32.RECT rc;
+			if (!Win32.GetClientRect(hwnd, out rc))
+			{
+				return;
+			}
+
+			Rectangle rect = Rectangle.FromLTRB(rc.left, rc.top, rc.right, rc.bottom);
+
+			if (rect.Width == 0 || rect.Height == 0)
+			{
+				return;
+			}
+
+			using (var bm = new Bitmap(rect.Width, rect.Height))
+			{
+				using (var destGraphics = Graphics.FromImage(bm))
+				{
+					using (var sourceGraphics = Graphics.FromHwnd(hwnd))
+					{
+						IntPtr sourceDC = sourceGraphics.GetHdc();
+
+						try
+						{
+							IntPtr destDC = destGraphics.GetHdc();
+
+							try
+							{
+								if (!Win32.BitBlt(destDC, 0, 0, rect.Width, rect.Height, sourceDC, 0, 0, Win32.SRCCOPY))
+								{
+									return;
+								}
+							}
+							finally
+							{
+								destGraphics.ReleaseHdc(destDC);
+							}
+						}
+						finally
+						{
+							sourceGraphics.ReleaseHdc(sourceDC);
+						}
+					}
+				}
+
+				AddImage(bm);
 			}
 		}
 	}
