@@ -122,10 +122,11 @@ namespace YoloAnnotate
 
 			return Icon.FromHandle(hIcon);
 		}
+				
+		[DllImport("User32.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true, EntryPoint = "PrintWindow")]
+		public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
 
-		[DllImport("Gdi32.dll", CallingConvention = CallingConvention.StdCall, SetLastError = true, EntryPoint = "BitBlt")]
-		public static extern bool BitBlt(IntPtr hdcDest, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, uint dwRop);
-
-		public const uint SRCCOPY = 0x00CC0020;
+		public const uint PW_CLIENTONLY = 0x00000001;
+		public const uint PW_RENDERFULLCONTENT = 0x00000002;
 	}
 }

@@ -1013,30 +1013,18 @@ namespace YoloAnnotate
 			{
 				using (var destGraphics = Graphics.FromImage(bm))
 				{
-					using (var sourceGraphics = Graphics.FromHwnd(hwnd))
+					IntPtr destDC = destGraphics.GetHdc();
+
+					try
 					{
-						IntPtr sourceDC = sourceGraphics.GetHdc();
-
-						try
+						if (!Win32.PrintWindow(hwnd, destDC, Win32.PW_CLIENTONLY | Win32.PW_RENDERFULLCONTENT))
 						{
-							IntPtr destDC = destGraphics.GetHdc();
-
-							try
-							{
-								if (!Win32.BitBlt(destDC, 0, 0, rect.Width, rect.Height, sourceDC, 0, 0, Win32.SRCCOPY))
-								{
-									return;
-								}
-							}
-							finally
-							{
-								destGraphics.ReleaseHdc(destDC);
-							}
+							return;
 						}
-						finally
-						{
-							sourceGraphics.ReleaseHdc(sourceDC);
-						}
+					}
+					finally
+					{
+						destGraphics.ReleaseHdc(destDC);
 					}
 				}
 
